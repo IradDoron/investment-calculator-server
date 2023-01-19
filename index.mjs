@@ -73,6 +73,11 @@ Average annual interest of ticket: ${formattedResObject.average_annual_interest_
 			'Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers'
 		);
 
+		response.setHeader(
+			'Access-Control-Allow-Headers',
+			'Content-Type, Authorization'
+		);
+
 		response.send(JSON.stringify(formattedResoultString));
 	});
 });
