@@ -14,6 +14,18 @@ app.use(cors());
 
 app.use(express.json());
 
+app.use(function (req, res, next) {
+	res.header(
+		'Access-Control-Allow-Origin',
+		'https://investment-calculator-irad-matan.netlify.app/'
+	);
+	res.header(
+		'Access-Control-Allow-Headers',
+		'Origin, X-Requested-With, Content-Type, Accept'
+	);
+	next();
+});
+
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || 'localhost';
 
