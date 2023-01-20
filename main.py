@@ -1,6 +1,7 @@
 from yahoo_fin.stock_info import get_data
 import datetime
 import sys
+import json
 
 
 def find_next_month_ind(days_list):
@@ -8,6 +9,12 @@ def find_next_month_ind(days_list):
         if day.month != days_list[0].month:
             return day_ind
     return -1
+
+
+class GraphValues:
+    def __init__(self, total_value, total_contribution):
+        self.total_value = total_value
+        self.total_contribution = total_contribution
 
 
 def value_cal(years_ago, ticket, start_invest, monthly_contribution):
@@ -30,11 +37,15 @@ def value_cal(years_ago, ticket, start_invest, monthly_contribution):
     df_of_price = df.iloc[day_of_invest_list]['close']
     total_contribution = start_invest
     cnt_of_share = start_invest/df_of_price[0]
-    for price in df_of_price:
+    graph_dict = dict()
+    for date, price in df_of_price.iteritems():
         cnt_of_share += monthly_contribution/price
         total_contribution += monthly_contribution
+        graph_dict[str(date.date())] = GraphValues(
+            cnt_of_share*price, total_contribution)
 
     value_of_today = df_of_price[-1] * cnt_of_share
+    json_obj = json.dumps(graph_dict, default=lambda o: o.__dict__, indent=4)
 
     a, b, c, d, e = value_of_today, total_contribution, value_of_today*100/total_contribution, ((
         value_of_today/total_contribution)**(1/years_ago)-1)*100, ((df_of_price[-1]/df_of_price[0])**(1/years_ago)-1)*100
@@ -45,6 +56,8 @@ def value_cal(years_ago, ticket, start_invest, monthly_contribution):
         s += str(el)+'\n'
 
     print(s)
+
+    print(json_obj)
 
 
 if __name__ == '__main__':
