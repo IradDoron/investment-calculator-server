@@ -36,88 +36,99 @@ app.post('/test', (req, res) => {
 	res.send(`Hello ${name}`);
 });
 
-// app.post('/', (req, response) => {
-// 	const { body } = req;
-// 	const {
-// 		timeOfInvestment,
-// 		stockTicket,
-// 		initialInvestment,
-// 		monthlyContribution,
-// 	} = body;
+app.post('/', (req, response) => {
+	const { body } = req;
+	const {
+		timeOfInvestment,
+		stockTicket,
+		initialInvestment,
+		monthlyContribution,
+	} = body;
 
-// 	const options = {
-// 		args: [
-// 			timeOfInvestment,
-// 			stockTicket,
-// 			initialInvestment,
-// 			monthlyContribution,
-// 		],
-// 	};
+	const options = {
+		args: [
+			timeOfInvestment,
+			stockTicket,
+			initialInvestment,
+			monthlyContribution,
+		],
+	};
 
-// 	PythonShell.run('main.py', options, (err, res) => {
-// 		if (err) {
-// 			console.log(err);
-// 		}
+	const resObject = {
+		timeOfInvestment,
+		stockTicket,
+		initialInvestment,
+		monthlyContribution,
+	};
 
-// 		let formattedResObject = '';
-// 		res.forEach((item) => {
-// 			formattedResObject += item;
-// 			formattedResObject += '\n';
-// 		});
+	const resJson = JSON.stringify(resObject);
 
-// 		const jsonsList = formattedResObject.split('&*&');
+	res.send(resJson);
 
-// 		const parsedJsonsList = jsonsList.map((item) => JSON.parse(item));
+	// PythonShell.run('main.py', options, (err, res) => {
+	// 	if (err) {
+	// 		console.log(err);
+	// 	}
 
-// 		const graphDict = parsedJsonsList[0];
-// 		const divGraphDict = parsedJsonsList[1];
-// 		const divYearYield = parsedJsonsList[2];
+	// 	let formattedResObject = '';
+	// 	res.forEach((item) => {
+	// 		formattedResObject += item;
+	// 		formattedResObject += '\n';
+	// 	});
 
-// 		const formattedResoultObject = {
-// 			graphDict,
-// 			divGraphDict,
-// 			divYearYield,
-// 		};
+	// 	const jsonsList = formattedResObject.split('&*&');
 
-// 		const stringifyedResoultObject = JSON.stringify(formattedResoultObject);
+	// 	const parsedJsonsList = jsonsList.map((item) => JSON.parse(item));
 
-// 		response.setHeader('Access-Control-Allow-Origin', '*');
-// 		response.setHeader('Access-Control-Allow-Credentials', 'true');
-// 		response.setHeader(
-// 			'Access-Control-Allow-Methods',
-// 			'GET,HEAD,OPTIONS,POST,PUT'
-// 		);
-// 		response.setHeader(
-// 			'Access-Control-Allow-Headers',
-// 			'Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers'
-// 		);
+	// 	const graphDict = parsedJsonsList[0];
+	// 	const divGraphDict = parsedJsonsList[1];
+	// 	const divYearYield = parsedJsonsList[2];
 
-// 		response.setHeader(
-// 			'Access-Control-Allow-Headers',
-// 			'Content-Type, Authorization'
-// 		);
+	// 	const formattedResoultObject = {
+	// 		graphDict,
+	// 		divGraphDict,
+	// 		divYearYield,
+	// 	};
 
-// 		response.send(stringifyedResoultObject);
+	// 	const stringifyedResoultObject = JSON.stringify(formattedResoultObject);
 
-// 		// const formattedResObject = {
-// 		// 	value_of_today: res[0],
-// 		// 	total_contribution: res[1],
-// 		// 	cumulative_interest: res[2],
-// 		// 	average_annual_interest_of_final_value: res[3],
-// 		// 	average_annual_interest_of_ticket: res[4],
-// 		// };
+	// 	response.setHeader('Access-Control-Allow-Origin', '*');
+	// 	response.setHeader('Access-Control-Allow-Credentials', 'true');
+	// 	response.setHeader(
+	// 		'Access-Control-Allow-Methods',
+	// 		'GET,HEAD,OPTIONS,POST,PUT'
+	// 	);
+	// 	response.setHeader(
+	// 		'Access-Control-Allow-Headers',
+	// 		'Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers'
+	// 	);
 
-// 		// 		const formattedResoultString = `
-// 		// Final value of today: ${formattedResObject.value_of_today}
-// 		// total contribution: ${formattedResObject.total_contribution}
-// 		// Cumulative interest of ${formattedResObject.cumulative_interest}%
-// 		// Average annual interest of final value: ${formattedResObject.average_annual_interest_of_final_value}%
-// 		// Average annual interest of ticket: ${formattedResObject.average_annual_interest_of_ticket}%
-// 		//         `;
+	// 	response.setHeader(
+	// 		'Access-Control-Allow-Headers',
+	// 		'Content-Type, Authorization'
+	// 	);
 
-// 		// console.log(formattedResoultString);
-// 	});
-// });
+	// 	response.send(stringifyedResoultObject);
+
+	// 	// const formattedResObject = {
+	// 	// 	value_of_today: res[0],
+	// 	// 	total_contribution: res[1],
+	// 	// 	cumulative_interest: res[2],
+	// 	// 	average_annual_interest_of_final_value: res[3],
+	// 	// 	average_annual_interest_of_ticket: res[4],
+	// 	// };
+
+	// 	// 		const formattedResoultString = `
+	// 	// Final value of today: ${formattedResObject.value_of_today}
+	// 	// total contribution: ${formattedResObject.total_contribution}
+	// 	// Cumulative interest of ${formattedResObject.cumulative_interest}%
+	// 	// Average annual interest of final value: ${formattedResObject.average_annual_interest_of_final_value}%
+	// 	// Average annual interest of ticket: ${formattedResObject.average_annual_interest_of_ticket}%
+	// 	//         `;
+
+	// 	// console.log(formattedResoultString);
+	// });
+});
 
 app.listen(PORT, HOST, () => {
 	console.log(`Server running at http://${HOST}:${PORT}...`);
