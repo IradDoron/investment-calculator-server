@@ -56,23 +56,27 @@ app.post('/', (req, response) => {
 			console.log(err);
 		}
 
-		const formattedResObject = {
-			value_of_today: res[0],
-			total_contribution: res[1],
-			cumulative_interest: res[2],
-			average_annual_interest_of_final_value: res[3],
-			average_annual_interest_of_ticket: res[4],
+		let formattedResObject = '';
+		res.forEach((item) => {
+			formattedResObject += item;
+			formattedResObject += '\n';
+		});
+
+		const jsonsList = formattedResObject.split('&*&');
+
+		const parsedJsonsList = jsonsList.map((item) => JSON.parse(item));
+
+		const graphDict = parsedJsonsList[0];
+		const divGraphDict = parsedJsonsList[1];
+		const divYearYield = parsedJsonsList[2];
+
+		const formattedResoultObject = {
+			graphDict,
+			divGraphDict,
+			divYearYield,
 		};
 
-		const formattedResoultString = `
-Final value of today: ${formattedResObject.value_of_today}
-total contribution: ${formattedResObject.total_contribution}
-Cumulative interest of ${formattedResObject.cumulative_interest}%
-Average annual interest of final value: ${formattedResObject.average_annual_interest_of_final_value}%
-Average annual interest of ticket: ${formattedResObject.average_annual_interest_of_ticket}%
-        `;
-
-		console.log(formattedResoultString);
+		const stringifyedResoultObject = JSON.stringify(formattedResoultObject);
 
 		response.setHeader('Access-Control-Allow-Origin', '*');
 		response.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -90,7 +94,25 @@ Average annual interest of ticket: ${formattedResObject.average_annual_interest_
 			'Content-Type, Authorization'
 		);
 
-		response.send(JSON.stringify(formattedResoultString));
+		response.send(stringifyedResoultObject);
+
+		// const formattedResObject = {
+		// 	value_of_today: res[0],
+		// 	total_contribution: res[1],
+		// 	cumulative_interest: res[2],
+		// 	average_annual_interest_of_final_value: res[3],
+		// 	average_annual_interest_of_ticket: res[4],
+		// };
+
+		// 		const formattedResoultString = `
+		// Final value of today: ${formattedResObject.value_of_today}
+		// total contribution: ${formattedResObject.total_contribution}
+		// Cumulative interest of ${formattedResObject.cumulative_interest}%
+		// Average annual interest of final value: ${formattedResObject.average_annual_interest_of_final_value}%
+		// Average annual interest of ticket: ${formattedResObject.average_annual_interest_of_ticket}%
+		//         `;
+
+		// console.log(formattedResoultString);
 	});
 });
 
