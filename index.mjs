@@ -30,6 +30,12 @@ app.get('/', (req, result) => {
 	result.end('Hello World!');
 });
 
+app.post('/test', (req, res) => {
+	const { body } = req;
+	const { name } = body;
+	res.send(`Hello ${name}`);
+});
+
 // app.post('/', (req, response) => {
 // 	const { body } = req;
 // 	const {
