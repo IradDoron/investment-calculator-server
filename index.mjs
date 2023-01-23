@@ -20,6 +20,12 @@ app.use(function (req, res, next) {
 		'Access-Control-Allow-Headers',
 		'Origin, X-Requested-With, Content-Type, Accept'
 	);
+	req.header('Access-Control-Allow-Origin', '*');
+	req.header(
+		'Access-Control-Allow-Headers',
+		'Origin, X-Requested-With, Content-Type, Accept'
+	);
+
 	next();
 });
 
