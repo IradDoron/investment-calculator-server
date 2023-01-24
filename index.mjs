@@ -28,6 +28,10 @@ app.get('/', (req, res) => {
 	res.end('Hello World!');
 });
 
+app.get('/testget', (req, res) => {
+	res.end('Hello World from GET test!');
+});
+
 // create a dummy post test
 app.post('/test', (req, res) => {
 	const { body } = req;
