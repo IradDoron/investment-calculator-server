@@ -73,7 +73,7 @@ app.post('/calc', (req, res) => {
 
 	res.end(resJson);
 
-	// PythonShell.run('main.py', options, (err, res) => {
+	// PythonShell.run('calc.py', options, (err, res) => {
 	// 	if (err) {
 	// 		console.log(err);
 	// 	}
