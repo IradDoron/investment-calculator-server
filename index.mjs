@@ -136,6 +136,14 @@ app.post('/calc', (req, res) => {
 	*/
 });
 
+app.post('*', (req, res) => {
+	res.end('Invalid route!');
+});
+
+app.get('*', (req, res) => {
+	res.end('Invalid route!');
+});
+
 app.listen(PORT, HOST, () => {
 	console.log(`Server running at http://${HOST}:${PORT}...`);
 });
