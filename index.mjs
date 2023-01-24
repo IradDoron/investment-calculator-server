@@ -1,4 +1,3 @@
-import axios from 'axios';
 import cors from 'cors';
 import { config } from 'dotenv';
 import express from 'express';
@@ -10,45 +9,36 @@ config();
 
 const app = express();
 
-app.use(cors());
-
 app.use(express.json());
 
-app.use(function (req, res, next) {
-	res.setHeader('Access-Control-Allow-Origin', '*');
-	res.setHeader('Access-Control-Allow-Credentials', 'true');
-	res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT');
-	res.setHeader(
-		'Access-Control-Allow-Headers',
-		'Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers'
-	);
-	req.header('Access-Control-Allow-Origin', '*');
-	req.header(
-		'Access-Control-Allow-Headers',
-		'Origin, X-Requested-With, Content-Type, Accept'
-	);
+const corsOptions = {
+	origin: '*',
+	methods: ['GET', 'POST', 'PUT', 'DELETE'],
+	allowedHeaders: ['Content-Type', 'Authorization'],
+};
 
-	next();
-});
+const corsMiddleware = cors(corsOptions);
+
+app.use(corsMiddleware);
 
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || 'localhost';
 
-app.get('/', (req, result) => {
-	result.end('Hello World!');
+app.get('/', (req, res) => {
+	res.end('Hello World!');
 });
 
 // create a dummy post test
-app.post('/test', (req, result) => {
+app.post('/test', (req, res) => {
 	const { body } = req;
 	const { name } = body;
 
-	result.end(`Hello ${name}!`);
+	res.end(`Hello ${name}!`);
 });
 
 // to get the response from the test:
-// axios.post('http://localhost:5000/test', { name: 'John' }).then((res) => { console.log(res.data); }); // Hello John!
 
+/*
 app.post('/', (req, response) => {
 	const { body } = req;
 	const {
@@ -142,6 +132,7 @@ app.post('/', (req, response) => {
 	// 	// console.log(formattedResoultString);
 	// });
 });
+*/
 
 app.listen(PORT, HOST, () => {
 	console.log(`Server running at http://${HOST}:${PORT}...`);
