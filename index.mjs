@@ -38,11 +38,16 @@ app.get('/', (req, result) => {
 	result.end('Hello World!');
 });
 
-app.post('/test', (req, res) => {
+// create a dummy post test
+app.post('/test', (req, result) => {
 	const { body } = req;
 	const { name } = body;
-	res.send(`Hello ${name}`);
+
+	result.end(`Hello ${name}!`);
 });
+
+// to get the response from the test:
+// axios.post('http://localhost:5000/test', { name: 'John' }).then((res) => { console.log(res.data); }); // Hello John!
 
 app.post('/', (req, response) => {
 	const { body } = req;
