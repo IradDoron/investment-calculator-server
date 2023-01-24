@@ -38,8 +38,7 @@ app.post('/test', (req, res) => {
 
 // to get the response from the test:
 
-/*
-app.post('/', (req, response) => {
+app.post('/calc', (req, res) => {
 	const { body } = req;
 	const {
 		timeOfInvestment,
@@ -66,7 +65,9 @@ app.post('/', (req, response) => {
 
 	const resJson = JSON.stringify(resObject);
 
-	res.send(resJson);
+	res.end(resJson);
+
+	/*
 
 	// PythonShell.run('main.py', options, (err, res) => {
 	// 	if (err) {
@@ -131,8 +132,9 @@ app.post('/', (req, response) => {
 
 	// 	// console.log(formattedResoultString);
 	// });
+
+	*/
 });
-*/
 
 app.listen(PORT, HOST, () => {
 	console.log(`Server running at http://${HOST}:${PORT}...`);
