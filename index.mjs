@@ -28,19 +28,21 @@ app.get('/', (req, res) => {
 	res.end('Hello World!');
 });
 
-app.get('/testget', (req, res) => {
-	res.end('Hello World from GET test!');
+app.get('/page1', (req, res) => {
+	res.end('Hello World from page 1!');
 });
 
 // create a dummy post test
-app.post('/test', (req, res) => {
-	const { body } = req;
-	const { name } = body;
+// app.post('/test', (req, res) => {
+// 	const { body } = req;
+// 	const { name } = body;
 
-	res.end(`Hello ${name}!`);
-});
+// 	res.end(`Hello ${name}!`);
+// });
 
 // to get the response from the test:
+
+/*
 
 app.post('/calc', (req, res) => {
 	const { body } = req;
@@ -70,8 +72,6 @@ app.post('/calc', (req, res) => {
 	const resJson = JSON.stringify(resObject);
 
 	res.end(resJson);
-
-	/*
 
 	// PythonShell.run('main.py', options, (err, res) => {
 	// 	if (err) {
@@ -136,17 +136,9 @@ app.post('/calc', (req, res) => {
 
 	// 	// console.log(formattedResoultString);
 	// });
-
-	*/
 });
 
-app.post('*', (req, res) => {
-	res.end('Invalid route!');
-});
-
-app.get('*', (req, res) => {
-	res.end('Invalid route!');
-});
+*/
 
 app.listen(PORT, HOST, () => {
 	console.log(`Server running at http://${HOST}:${PORT}...`);
