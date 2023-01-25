@@ -135,8 +135,8 @@ def value_cal(years_ago, ticket, start_invest, monthly_contribution):
 
 if __name__ == '__main__':
 
-    # value_cal(years_ago=40, ticket='INTC',
-    #           start_invest=0, monthly_contribution=1000)
+    value_cal(years_ago=40, ticket='INTC',
+              start_invest=0, monthly_contribution=1000)
 
     value_cal(years_ago=float(sys.argv[1]), ticket=sys.argv[2],
               start_invest=float(sys.argv[3]), monthly_contribution=float(sys.argv[4]))

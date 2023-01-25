@@ -1,9 +1,7 @@
 import cors from 'cors';
 import { config } from 'dotenv';
 import express from 'express';
-import pkg from 'python-shell';
-
-const { PythonShell } = pkg;
+import yahooFinance from 'yahoo-finance';
 
 config();
 
@@ -11,129 +9,92 @@ const app = express();
 
 app.use(express.json());
 
-const corsOptions = {
-	origin: '*',
-	methods: ['GET', 'POST', 'PUT', 'DELETE'],
-	allowedHeaders: ['Content-Type', 'Authorization'],
-};
-
-const corsMiddleware = cors(corsOptions);
-
-app.use(corsMiddleware);
+app.use(cors());
 
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || 'localhost';
 
 app.get('/', (req, res) => {
-	res.end('Hello World!');
+	res.send('Hello World!');
 });
 
-app.get('/page1', (req, res) => {
-	res.end('Hello World from page 1!');
-});
+app.post('/calc', async (req, res) => {
+	try {
+		const { yearsAgo, ticket, startInvest, monthlyContribution } = req.body;
+		const currentDate = new Date();
+		const dateYearsAgo = new Date(currentDate);
+		dateYearsAgo.setDate(currentDate.getDate() - yearsAgo * 365.25);
 
-app.post('/name', (req, res) => {
-	const { body } = req;
-	const { name } = body;
-
-	res.end(`Hello ${name}!`);
-});
-
-app.post('/add', (req, res) => {
-	const { body } = req;
-	const { a, b } = body;
-
-	const sum = a + b;
-
-	res.end(`${sum}`);
-});
-
-app.post('/calc', (req, res) => {
-	const { body } = req;
-	const {
-		timeOfInvestment,
-		stockTicket,
-		initialInvestment,
-		monthlyContribution,
-	} = body;
-
-	const options = {
-		args: [
-			timeOfInvestment,
-			stockTicket,
-			initialInvestment,
-			monthlyContribution,
-		],
-	};
-
-	PythonShell.run('main.py', options, (err, response) => {
-		if (err) {
-			console.log(err);
-		}
-
-		let formattedResObject = '';
-		response.forEach((item) => {
-			formattedResObject += item;
-			formattedResObject += '\n';
-		});
-
-		const jsonsList = formattedResObject.split('&*&');
-
-		const parsedJsonsList = jsonsList.map((item) => JSON.parse(item));
-
-		const graphDict = parsedJsonsList[0];
-		const divGraphDict = parsedJsonsList[1];
-		const divYearYield = parsedJsonsList[2];
-
-		const formattedResoultObject = {
-			graphDict,
-			divGraphDict,
-			divYearYield,
+		const historicalOptions = {
+			symbol: ticket,
+			from: dateYearsAgo,
+			to: currentDate,
+			period: 'm', // 'd' (daily), 'w' (weekly), 'm' (monthly), 'v' (dividends only)
 		};
 
-		const stringifyedResoultObject = JSON.stringify(formattedResoultObject);
+		const quotes = await yahooFinance.historical(historicalOptions);
 
-		res.send(stringifyedResoultObject);
+		const dateAndClosedTuples = quotes.map((quote) => {
+			const date = quote.date;
+			const close = quote.close;
+			return { date, close };
+		});
 
-		// const formattedResObject = {
-		// 	value_of_today: res[0],
-		// 	total_contribution: res[1],
-		// 	cumulative_interest: res[2],
-		// 	average_annual_interest_of_final_value: res[3],
-		// 	average_annual_interest_of_ticket: res[4],
-		// };
+		const historicalDividendsOptions = {
+			symbol: ticket,
+			from: dateYearsAgo,
+			to: currentDate,
+			period: 'v',
+		};
 
-		// 		const formattedResoultString = `
-		// Final value of today: ${formattedResObject.value_of_today}
-		// total contribution: ${formattedResObject.total_contribution}
-		// Cumulative interest of ${formattedResObject.cumulative_interest}%
-		// Average annual interest of final value: ${formattedResObject.average_annual_interest_of_final_value}%
-		// Average annual interest of ticket: ${formattedResObject.average_annual_interest_of_ticket}%
-		//         `;
+		const dividentsQuotes = await yahooFinance.historical(
+			historicalDividendsOptions
+		);
 
-		// console.log(formattedResoultString);
-	});
+		const dateAndDividendTuples = quotes.map((quote) => {
+			const date = quote.date;
+			const dividend = quote.dividends;
+			return { date, dividend };
+		});
+
+		let shareCntr = 0;
+		let contCntr = 0;
+		const valueGraph = [];
+
+		for (let i = dateAndClosedTuples.length - 1; i >= 0; i--) {
+			const { date, close } = dateAndClosedTuples[i];
+			shareCntr += monthlyContribution / close;
+			contCntr += monthlyContribution;
+			valueGraph.push({
+				date,
+				value: shareCntr * close,
+				contribution: contCntr,
+			});
+		}
+
+		res.send(valueGraph);
+	} catch (err) {
+		console.log(err);
+	}
 });
 
-app.post('/calc-dummy', (req, res) => {
-	const { body } = req;
-	const {
-		timeOfInvestment,
-		stockTicket,
-		initialInvestment,
-		monthlyContribution,
-	} = body;
+// 	const { yearsAgo, ticket, startInvest, monthlyContribution } = req.body;
+// 	console.log(yearsAgo, ticket, startInvest, monthlyContribution);
+// 	valueCalc(yearsAgo, ticket, startInvest, monthlyContribution).then(
+// 		(valueGraph) => {
+// 			console.log('valueGraph', valueGraph);
+// 			res.send(valueGraph);
+// 		}
+// 	);
+// });
 
-	let formattedRes = `
-		timeOfInvestment: ${timeOfInvestment}
-		stockTicket: ${stockTicket}
-		initialInvestment: ${initialInvestment}
-		monthlyContribution: ${monthlyContribution}
-	`;
+// const yearsAgo = 40;
+// const ticket = 'INTC';
+// const startInvest = 0;
+// const monthlyContribution = 1000;
 
-	res.end(formattedRes);
-});
+// valueCalc(yearsAgo, ticket, startInvest, monthlyContribution);
 
 app.listen(PORT, HOST, () => {
-	console.log(`Server running at http://${HOST}:${PORT}...`);
+	console.log(`Server running on http://${HOST}:${PORT}`);
 });
