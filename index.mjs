@@ -73,13 +73,13 @@ app.post('/calc', (req, res) => {
 	// 	monthlyContribution,
 	// };
 
-	PythonShell.run('calc.py', options, (err, res) => {
+	PythonShell.run('calc.py', options, (err, response) => {
 		if (err) {
 			console.log(err);
 		}
 
 		let formattedResObject = '';
-		res.forEach((item) => {
+		response.forEach((item) => {
 			formattedResObject += item;
 			formattedResObject += '\n';
 		});
@@ -100,23 +100,7 @@ app.post('/calc', (req, res) => {
 
 		const stringifyedResoultObject = JSON.stringify(formattedResoultObject);
 
-		response.setHeader('Access-Control-Allow-Origin', '*');
-		response.setHeader('Access-Control-Allow-Credentials', 'true');
-		response.setHeader(
-			'Access-Control-Allow-Methods',
-			'GET,HEAD,OPTIONS,POST,PUT'
-		);
-		response.setHeader(
-			'Access-Control-Allow-Headers',
-			'Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers'
-		);
-
-		response.setHeader(
-			'Access-Control-Allow-Headers',
-			'Content-Type, Authorization'
-		);
-
-		response.end(stringifyedResoultObject);
+		res.send(stringifyedResoultObject);
 
 		// const formattedResObject = {
 		// 	value_of_today: res[0],
