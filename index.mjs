@@ -66,13 +66,6 @@ app.post('/calc', (req, res) => {
 		],
 	};
 
-	// const resObject = {
-	// 	timeOfInvestment,
-	// 	stockTicket,
-	// 	initialInvestment,
-	// 	monthlyContribution,
-	// };
-
 	PythonShell.run('calc.py', options, (err, response) => {
 		if (err) {
 			console.log(err);
@@ -120,6 +113,25 @@ app.post('/calc', (req, res) => {
 
 		// console.log(formattedResoultString);
 	});
+});
+
+app.post('/calc-dummy', (req, res) => {
+	const { body } = req;
+	const {
+		timeOfInvestment,
+		stockTicket,
+		initialInvestment,
+		monthlyContribution,
+	} = body;
+
+	let formattedRes = `
+		timeOfInvestment: ${timeOfInvestment}
+		stockTicket: ${stockTicket}
+		initialInvestment: ${initialInvestment}
+		monthlyContribution: ${monthlyContribution}
+	`;
+
+	res.end(formattedRes);
 });
 
 app.listen(PORT, HOST, () => {
