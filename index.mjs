@@ -66,80 +66,76 @@ app.post('/calc', (req, res) => {
 		],
 	};
 
-	const resObject = {
-		timeOfInvestment,
-		stockTicket,
-		initialInvestment,
-		monthlyContribution,
-	};
+	// const resObject = {
+	// 	timeOfInvestment,
+	// 	stockTicket,
+	// 	initialInvestment,
+	// 	monthlyContribution,
+	// };
 
-	const resJson = JSON.stringify(resObject);
+	PythonShell.run('calc.py', options, (err, res) => {
+		if (err) {
+			console.log(err);
+		}
 
-	res.end(resJson);
+		let formattedResObject = '';
+		res.forEach((item) => {
+			formattedResObject += item;
+			formattedResObject += '\n';
+		});
 
-	// PythonShell.run('calc.py', options, (err, res) => {
-	// 	if (err) {
-	// 		console.log(err);
-	// 	}
+		const jsonsList = formattedResObject.split('&*&');
 
-	// 	let formattedResObject = '';
-	// 	res.forEach((item) => {
-	// 		formattedResObject += item;
-	// 		formattedResObject += '\n';
-	// 	});
+		const parsedJsonsList = jsonsList.map((item) => JSON.parse(item));
 
-	// 	const jsonsList = formattedResObject.split('&*&');
+		const graphDict = parsedJsonsList[0];
+		const divGraphDict = parsedJsonsList[1];
+		const divYearYield = parsedJsonsList[2];
 
-	// 	const parsedJsonsList = jsonsList.map((item) => JSON.parse(item));
+		const formattedResoultObject = {
+			graphDict,
+			divGraphDict,
+			divYearYield,
+		};
 
-	// 	const graphDict = parsedJsonsList[0];
-	// 	const divGraphDict = parsedJsonsList[1];
-	// 	const divYearYield = parsedJsonsList[2];
+		const stringifyedResoultObject = JSON.stringify(formattedResoultObject);
 
-	// 	const formattedResoultObject = {
-	// 		graphDict,
-	// 		divGraphDict,
-	// 		divYearYield,
-	// 	};
+		response.setHeader('Access-Control-Allow-Origin', '*');
+		response.setHeader('Access-Control-Allow-Credentials', 'true');
+		response.setHeader(
+			'Access-Control-Allow-Methods',
+			'GET,HEAD,OPTIONS,POST,PUT'
+		);
+		response.setHeader(
+			'Access-Control-Allow-Headers',
+			'Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers'
+		);
 
-	// 	const stringifyedResoultObject = JSON.stringify(formattedResoultObject);
+		response.setHeader(
+			'Access-Control-Allow-Headers',
+			'Content-Type, Authorization'
+		);
 
-	// 	response.setHeader('Access-Control-Allow-Origin', '*');
-	// 	response.setHeader('Access-Control-Allow-Credentials', 'true');
-	// 	response.setHeader(
-	// 		'Access-Control-Allow-Methods',
-	// 		'GET,HEAD,OPTIONS,POST,PUT'
-	// 	);
-	// 	response.setHeader(
-	// 		'Access-Control-Allow-Headers',
-	// 		'Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers'
-	// 	);
+		response.end(stringifyedResoultObject);
 
-	// 	response.setHeader(
-	// 		'Access-Control-Allow-Headers',
-	// 		'Content-Type, Authorization'
-	// 	);
+		// const formattedResObject = {
+		// 	value_of_today: res[0],
+		// 	total_contribution: res[1],
+		// 	cumulative_interest: res[2],
+		// 	average_annual_interest_of_final_value: res[3],
+		// 	average_annual_interest_of_ticket: res[4],
+		// };
 
-	// 	response.send(stringifyedResoultObject);
+		// 		const formattedResoultString = `
+		// Final value of today: ${formattedResObject.value_of_today}
+		// total contribution: ${formattedResObject.total_contribution}
+		// Cumulative interest of ${formattedResObject.cumulative_interest}%
+		// Average annual interest of final value: ${formattedResObject.average_annual_interest_of_final_value}%
+		// Average annual interest of ticket: ${formattedResObject.average_annual_interest_of_ticket}%
+		//         `;
 
-	// 	// const formattedResObject = {
-	// 	// 	value_of_today: res[0],
-	// 	// 	total_contribution: res[1],
-	// 	// 	cumulative_interest: res[2],
-	// 	// 	average_annual_interest_of_final_value: res[3],
-	// 	// 	average_annual_interest_of_ticket: res[4],
-	// 	// };
-
-	// 	// 		const formattedResoultString = `
-	// 	// Final value of today: ${formattedResObject.value_of_today}
-	// 	// total contribution: ${formattedResObject.total_contribution}
-	// 	// Cumulative interest of ${formattedResObject.cumulative_interest}%
-	// 	// Average annual interest of final value: ${formattedResObject.average_annual_interest_of_final_value}%
-	// 	// Average annual interest of ticket: ${formattedResObject.average_annual_interest_of_ticket}%
-	// 	//         `;
-
-	// 	// console.log(formattedResoultString);
-	// });
+		// console.log(formattedResoultString);
+	});
 });
 
 app.listen(PORT, HOST, () => {
