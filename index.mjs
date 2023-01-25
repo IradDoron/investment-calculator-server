@@ -32,17 +32,21 @@ app.get('/page1', (req, res) => {
 	res.end('Hello World from page 1!');
 });
 
-// create a dummy post test
-// app.post('/test', (req, res) => {
-// 	const { body } = req;
-// 	const { name } = body;
+app.post('/name', (req, res) => {
+	const { body } = req;
+	const { name } = body;
 
-// 	res.end(`Hello ${name}!`);
-// });
+	res.end(`Hello ${name}!`);
+});
 
-// to get the response from the test:
+app.post('/add', (req, res) => {
+	const { body } = req;
+	const { a, b } = body;
 
-/*
+	const sum = a + b;
+
+	res.end(`${sum}`);
+});
 
 app.post('/calc', (req, res) => {
 	const { body } = req;
@@ -137,8 +141,6 @@ app.post('/calc', (req, res) => {
 	// 	// console.log(formattedResoultString);
 	// });
 });
-
-*/
 
 app.listen(PORT, HOST, () => {
 	console.log(`Server running at http://${HOST}:${PORT}...`);
