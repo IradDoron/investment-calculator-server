@@ -25,13 +25,6 @@ app.post('/calc', async (req, res) => {
 		const dateYearsAgo = new Date(currentDate);
 		dateYearsAgo.setDate(currentDate.getDate() - yearsAgo * 365.25);
 
-		const historicalOptions = {
-			symbol: ticket,
-			from: dateYearsAgo,
-			to: currentDate,
-			period: 'm', // 'd' (daily), 'w' (weekly), 'm' (monthly), 'v' (dividends only)
-		};
-
 		const historicalDividendsOptions = {
 			symbol: ticket,
 			from: dateYearsAgo,
@@ -46,22 +39,43 @@ app.post('/calc', async (req, res) => {
 			period: 'd', // 'd' (daily), 'w' (weekly), 'm' (monthly), 'v' (dividends only)
 		};
 
-		const quotesMonthly = await yahooFinance.historical(historicalOptions);
-
 		const quotesDayly = await yahooFinance.historical(historicalOptionsDayly);
 
 		const dividendsQuotes = await yahooFinance.historical(
 			historicalDividendsOptions
 		);
 
-		const getDictOfClosePricesOnDividendDates = (dividends, dailyQuotes) => {
+		const getDictOfClosePricesOnDividendDatesAndValueGraph = (
+			dividends,
+			dailyQuotes,
+			monthlyContribution
+		) => {
 			const dictOfClosePricesOnDividendDates = {};
 			let dividendIndex = dividends.length - 1;
+
+			let currMonth = dailyQuotes[dailyQuotes.length - 1].date.getMonth();
+
+			let shareCntr = 0;
+			let contCntr = 0;
+			const valueGraph = [];
 
 			for (let i = dailyQuotes.length - 1; i >= 0; i--) {
 				const { date, close } = dailyQuotes[i];
 
 				const { date: dividendDate } = dividends[dividendIndex];
+
+				if (date.getMonth() !== currMonth || i === dailyQuotes.length - 1) {
+					shareCntr += monthlyContribution / close;
+					contCntr += monthlyContribution;
+					valueGraph.push({
+						date,
+						value: shareCntr * close,
+						contribution: contCntr,
+						shares: shareCntr,
+					});
+
+					currMonth = date.getMonth();
+				}
 
 				if (date.getTime() === dividendDate.getTime()) {
 					dictOfClosePricesOnDividendDates[date.getTime()] = close;
@@ -73,12 +87,13 @@ app.post('/calc', async (req, res) => {
 				}
 			}
 
-			// console.log(
-			// 	'dictOfClosePricesOnDividendDates',
-			// 	dictOfClosePricesOnDividendDates
-			// );
+			valueGraph.forEach((_, index, arr) => {
+				arr[index].nextDate = arr[index + 1]?.date;
+			});
 
-			return dictOfClosePricesOnDividendDates;
+			console.log('valueGraph', valueGraph);
+
+			return { dictOfClosePricesOnDividendDates, valueGraph };
 		};
 
 		const getSumEarningsFromDividendPerYear = (
@@ -87,25 +102,6 @@ app.post('/calc', async (req, res) => {
 			quotesDayly,
 			dictOfClosePricesOnDividendDates
 		) => {
-			// valueGraph {
-			// 	date: 1985-01-01T05:00:00.000Z,
-			// 	value: 1000,
-			// 	contribution: 1000,
-			// 	shares: 1560.9756097560976,
-			// 	nextDate: 1985-02-01T05:00:00.000Z
-			//   }
-
-			// dividendsQuotes { date: 2022-11-04T04:00:00.000Z, dividends: 0.365, symbol: 'INTC' }
-
-			/*
-				output:
-					{
-						2020: 1450, 
-						2021: 1450,
-						2022: 1450,
-					}
-			*/
-
 			const sumEarningsFromDividendPerYear = {};
 			const dividendYieldPerYear = {};
 			let valueGraphIndex = 0;
@@ -141,58 +137,18 @@ app.post('/calc', async (req, res) => {
 				}
 			}
 
-			console.log('dividendYieldPerYear', dividendYieldPerYear);
-
 			return sumEarningsFromDividendPerYear;
 		};
 
-		const getValueGraph = (dateAndClosedTuples, monthlyContribution) => {
-			let shareCntr = 0;
-			let contCntr = 0;
-			const valueGraph = [];
+		const dictOfClosePricesOnDividendDatesAndValueGraph =
+			getDictOfClosePricesOnDividendDatesAndValueGraph(
+				dividendsQuotes,
+				quotesDayly,
+				monthlyContribution
+			);
 
-			for (let i = dateAndClosedTuples.length - 1; i >= 0; i--) {
-				const { date, close } = dateAndClosedTuples[i];
-				shareCntr += monthlyContribution / close;
-				contCntr += monthlyContribution;
-				valueGraph.push({
-					date,
-					value: shareCntr * close,
-					contribution: contCntr,
-					shares: shareCntr,
-					nextDate: dateAndClosedTuples[i - 1]?.date,
-				});
-			}
-
-			return valueGraph;
-		};
-
-		const getDateAndDividendTuples = (dividendsQuotes) => {
-			const dateAndDividendTuples = dividendsQuotes.map((quote) => {
-				const date = quote.date;
-				const dividend = quote.dividends;
-				return { date, dividend };
-			});
-
-			return dateAndDividendTuples;
-		};
-
-		const getDateAndClosedTuples = (quotesMonthly) => {
-			const dateAndClosedTuples = quotesMonthly.map((quote) => {
-				const date = quote.date;
-				const close = quote.close;
-				return { date, close };
-			});
-
-			return dateAndClosedTuples;
-		};
-
-		const dictOfClosePricesOnDividendDates =
-			getDictOfClosePricesOnDividendDates(dividendsQuotes, quotesDayly);
-
-		const dateAndClosedTuples = getDateAndClosedTuples(quotesMonthly);
-
-		const valueGraph = getValueGraph(dateAndClosedTuples, monthlyContribution);
+		const { dictOfClosePricesOnDividendDates, valueGraph } =
+			dictOfClosePricesOnDividendDatesAndValueGraph;
 
 		const sumEarningsFromDividendPerYear = getSumEarningsFromDividendPerYear(
 			dividendsQuotes,
@@ -206,23 +162,6 @@ app.post('/calc', async (req, res) => {
 		console.log(err);
 	}
 });
-
-// 	const { yearsAgo, ticket, startInvest, monthlyContribution } = req.body;
-// 	console.log(yearsAgo, ticket, startInvest, monthlyContribution);
-// 	valueCalc(yearsAgo, ticket, startInvest, monthlyContribution).then(
-// 		(valueGraph) => {
-// 			console.log('valueGraph', valueGraph);
-// 			res.send(valueGraph);
-// 		}
-// 	);
-// });
-
-// const yearsAgo = 40;
-// const ticket = 'INTC';
-// const startInvest = 0;
-// const monthlyContribution = 1000;
-
-// valueCalc(yearsAgo, ticket, startInvest, monthlyContribution);
 
 app.listen(PORT, HOST, () => {
 	console.log(`Server running on http://${HOST}:${PORT}`);
