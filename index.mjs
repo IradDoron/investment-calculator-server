@@ -51,38 +51,7 @@ app.post('/calc', async (req, res) => {
 			historicalDividendsOptions
 		);
 
-		const getSumDividentsPerYear = (dividentsQuotes) => {
-			// format of data:
-			// [
-			// 	{
-			// 		date: 2020-12-15T00:00:00.000Z,
-			// 		dividends: 0.5,
-			// 		splits: 1
-			// 	},
-			// 	]
-			// output:
-			// [
-			// 	{
-			// 		year: 2020,
-			// 		dividends: 0.5,
-			// 	},
-			// 	]
-			const dividentsPerYear = [];
-
-			for (let i = dividentsQuotes.length - 1; i >= 0; i--) {
-				const year = dividentsQuotes[i].date.getFullYear();
-				const dividends = dividentsQuotes[i].dividends;
-				const index = dividentsPerYear.findIndex(
-					(divident) => divident.year === year
-				);
-				if (index === -1) {
-					dividentsPerYear.push({ year, dividends });
-				} else {
-					dividentsPerYear[index].dividends += dividends;
-				}
-			}
-			return dividentsPerYear;
-		};
+		const reversedDividentsQuotes = dividentsQuotes.reverse();
 
 		const dateAndDividendTuples = quotes.map((quote) => {
 			const date = quote.date;
@@ -107,8 +76,6 @@ app.post('/calc', async (req, res) => {
 			});
 		}
 
-		const sumEarningsFromDividendPerYear = [];
-
 		const getSumEarningsFromDividendPerYear = (dividends, valueGraph) => {
 			// valueGraph {
 			// 	date: 1985-01-01T05:00:00.000Z,
@@ -131,44 +98,35 @@ app.post('/calc', async (req, res) => {
 			const sumEarningsFromDividendPerYear = {};
 			let valueGraphIndex = 0;
 			dividends.forEach((dividend) => {
-				const { date, dividends} = dividend;
-				const year = date.getFullYear();
+				const { date: dividendDate, dividends } = dividend;
+				const year = dividendDate.getFullYear();
 
-				const currentYearEarnings = 0;
+				if (!sumEarningsFromDividendPerYear[year]) {
+					sumEarningsFromDividendPerYear[year] = 0;
+				}
 
 				const isDateInRange = (date, start, end) => {
 					return date >= start && date <= end;
-				}
+				};
 
-				const {date: valueGraphDate, nextDate: valueGraphNextDate} = valueGraph[valueGraphIndex];
+				for (let i = valueGraphIndex; i < valueGraph.length; i++) {
+					const { date, nextDate, shares } = valueGraph[i];
 
-				while (isDateInRange(date, valueGraphDate, valueGraphNextDate)) {
-					const { shares } = valueGraph[valueGraphIndex];
-
-					const currEarnings = shares * dividends;
-
-					const index = sumEarningsFromDividendPerYear.findIndex(
-						(item) => item.year === year
-					);
-
-					if (index === -1) {
-						dividentsPerYear.push({ year, dividends });
-					} else {
-						dividentsPerYear[index].dividends += dividends;
+					if (isDateInRange(dividendDate, date, nextDate)) {
+						sumEarningsFromDividendPerYear[year] += shares * dividends;
+						valueGraphIndex = i;
+						break;
 					}
-
-					currentYearEarnings += shares * dividends;
-					valueGraphIndex++;
 				}
+			});
 
-
-
-
-
+			return sumEarningsFromDividendPerYear;
 		};
 
-		console.log('valueGraph', valueGraph[0]);
-		console.log('dividentsQuotes', dividentsQuotes[0]);
+		const sumEarningsFromDividendPerYear = getSumEarningsFromDividendPerYear(
+			reversedDividentsQuotes,
+			valueGraph
+		);
 
 		res.send(valueGraph);
 	} catch (err) {
