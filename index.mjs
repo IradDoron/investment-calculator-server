@@ -152,15 +152,27 @@ app.post('/calc', async (req, res) => {
 			dictOfClosePricesOnDividendDates
 		);
 
+		const earningsFromDividendPerYearArr = Object.entries(
+			earningsFromDividendPerYear
+		).map(([year, value]) => ({
+			year,
+			value,
+		}));
+
+		const dividendYieldPerYearArr = Object.entries(dividendYieldPerYear).map(
+			([year, value]) => ({
+				year,
+				value,
+			})
+		);
+
 		const responseObject = {
 			stockPrices,
-			earningsFromDividendPerYear,
-			dividendYieldPerYear,
+			earningsFromDividendPerYear: earningsFromDividendPerYearArr,
+			dividendYieldPerYear: dividendYieldPerYearArr,
 		};
 
-		console.log('responseObject', responseObject);
-
-		res.send(stockPrices);
+		res.send(responseObject);
 	} catch (err) {
 		console.log(err);
 	}
