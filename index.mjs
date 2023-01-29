@@ -45,19 +45,17 @@ app.post('/calc', async (req, res) => {
 			historicalDividendsOptions
 		);
 
-		const getDictOfClosePricesOnDividendDatesAndValueGraph = (
-			dividends,
-			dailyQuotes,
-			monthlyContribution
-		) => {
+		// console.log('dividendsQuotes', dividendsQuotes);
+
+		const pricesDict = (dividends, dailyQuotes, monthlyContribution) => {
 			const dictOfClosePricesOnDividendDates = {};
 			let dividendIndex = dividends.length - 1;
 
 			let currMonth = dailyQuotes[dailyQuotes.length - 1].date.getMonth();
 
-			let shareCntr = 0;
+			let stockCntr = 0;
 			let contCntr = 0;
-			const valueGraph = [];
+			const stockPrices = [];
 
 			for (let i = dailyQuotes.length - 1; i >= 0; i--) {
 				const { date, close } = dailyQuotes[i];
@@ -65,13 +63,13 @@ app.post('/calc', async (req, res) => {
 				const { date: dividendDate } = dividends[dividendIndex];
 
 				if (date.getMonth() !== currMonth || i === dailyQuotes.length - 1) {
-					shareCntr += monthlyContribution / close;
+					stockCntr += monthlyContribution / close;
 					contCntr += monthlyContribution;
-					valueGraph.push({
+					stockPrices.push({
 						date,
-						value: shareCntr * close,
+						value: stockCntr * close,
 						contribution: contCntr,
-						shares: shareCntr,
+						stockCnt: stockCntr,
 					});
 
 					currMonth = date.getMonth();
@@ -87,30 +85,28 @@ app.post('/calc', async (req, res) => {
 				}
 			}
 
-			valueGraph.forEach((_, index, arr) => {
+			stockPrices.forEach((_, index, arr) => {
 				arr[index].nextDate = arr[index + 1]?.date;
 			});
 
-			console.log('valueGraph', valueGraph);
-
-			return { dictOfClosePricesOnDividendDates, valueGraph };
+			return { dictOfClosePricesOnDividendDates, stockPrices };
 		};
 
-		const getSumEarningsFromDividendPerYear = (
+		const divCalc = (
 			dividends,
-			valueGraph,
+			stockPrices,
 			quotesDayly,
 			dictOfClosePricesOnDividendDates
 		) => {
-			const sumEarningsFromDividendPerYear = {};
+			const earningsFromDividendPerYear = {};
 			const dividendYieldPerYear = {};
 			let valueGraphIndex = 0;
 			for (let i = dividends.length - 1; i >= 0; i--) {
 				const { date: dividendDate, dividends: currDividends } = dividends[i];
 				const year = dividendDate.getFullYear();
 
-				if (!sumEarningsFromDividendPerYear[year]) {
-					sumEarningsFromDividendPerYear[year] = 0;
+				if (!earningsFromDividendPerYear[year]) {
+					earningsFromDividendPerYear[year] = 0;
 				}
 
 				if (!dividendYieldPerYear[year]) {
@@ -126,38 +122,45 @@ app.post('/calc', async (req, res) => {
 					return date >= start && date <= end;
 				};
 
-				for (let i = valueGraphIndex; i < valueGraph.length; i++) {
-					const { date, nextDate, shares } = valueGraph[i];
+				for (let i = valueGraphIndex; i < stockPrices.length; i++) {
+					const { date, nextDate, stockCnt } = stockPrices[i];
 
-					if (isDateInRange(dividendDate, date, nextDate)) {
-						sumEarningsFromDividendPerYear[year] += shares * currDividends;
+					if (
+						isDateInRange(dividendDate, date, nextDate) ||
+						(!nextDate && isDateInRange(dividendDate, date, new Date()))
+					) {
+						earningsFromDividendPerYear[year] += stockCnt * currDividends;
 						valueGraphIndex = i;
 						break;
 					}
 				}
 			}
 
-			return sumEarningsFromDividendPerYear;
+			return { earningsFromDividendPerYear, dividendYieldPerYear };
 		};
 
-		const dictOfClosePricesOnDividendDatesAndValueGraph =
-			getDictOfClosePricesOnDividendDatesAndValueGraph(
-				dividendsQuotes,
-				quotesDayly,
-				monthlyContribution
-			);
-
-		const { dictOfClosePricesOnDividendDates, valueGraph } =
-			dictOfClosePricesOnDividendDatesAndValueGraph;
-
-		const sumEarningsFromDividendPerYear = getSumEarningsFromDividendPerYear(
+		const { dictOfClosePricesOnDividendDates, stockPrices } = pricesDict(
 			dividendsQuotes,
-			valueGraph,
+			quotesDayly,
+			monthlyContribution
+		);
+
+		const { earningsFromDividendPerYear, dividendYieldPerYear } = divCalc(
+			dividendsQuotes,
+			stockPrices,
 			quotesDayly,
 			dictOfClosePricesOnDividendDates
 		);
 
-		res.send(valueGraph);
+		const responseObject = {
+			stockPrices,
+			earningsFromDividendPerYear,
+			dividendYieldPerYear,
+		};
+
+		console.log('responseObject', responseObject);
+
+		res.send(stockPrices);
 	} catch (err) {
 		console.log(err);
 	}
