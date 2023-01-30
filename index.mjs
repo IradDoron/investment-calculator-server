@@ -1,6 +1,7 @@
 import cors from 'cors';
 import { config } from 'dotenv';
 import express from 'express';
+import { stocks } from 'get-all-tickers';
 import yahooFinance from 'yahoo-finance';
 
 config();
@@ -16,6 +17,15 @@ const HOST = process.env.HOST || 'localhost';
 
 app.get('/', (req, res) => {
 	res.send('Hello World!');
+});
+
+app.get('/all-tickers', async (req, res) => {
+	try {
+		const allTickers = await stocks.tickers();
+		res.send(allTickers);
+	} catch (error) {
+		console.log(error);
+	}
 });
 
 app.post('/calc', async (req, res) => {
