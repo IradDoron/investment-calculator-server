@@ -41,6 +41,11 @@ app.post('/calc', async (req, res) => {
 
 		const quotesDayly = await yahooFinance.historical(historicalOptionsDayly);
 
+		if (quotesDayly.length === 0) {
+			res.send({ error: 'No data for this ticker' });
+			return;
+		}
+
 		const dividendsQuotes = await yahooFinance.historical(
 			historicalDividendsOptions
 		);
@@ -48,7 +53,6 @@ app.post('/calc', async (req, res) => {
 		// console.log('dividendsQuotes', dividendsQuotes);
 
 		const pricesDict = (dividends, dailyQuotes, monthlyContribution) => {
-			console.log('dividends', dividends);
 			const dictOfClosePricesOnDividendDates = {};
 			let dividendIndex = dividends.length - 1;
 
