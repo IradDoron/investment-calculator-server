@@ -48,6 +48,7 @@ app.post('/calc', async (req, res) => {
 		// console.log('dividendsQuotes', dividendsQuotes);
 
 		const pricesDict = (dividends, dailyQuotes, monthlyContribution) => {
+			console.log('dividends', dividends);
 			const dictOfClosePricesOnDividendDates = {};
 			let dividendIndex = dividends.length - 1;
 
@@ -57,39 +58,64 @@ app.post('/calc', async (req, res) => {
 			let contCntr = 0;
 			const stockPrices = [];
 
-			for (let i = dailyQuotes.length - 1; i >= 0; i--) {
-				const { date, close } = dailyQuotes[i];
+			if (dividends.length === 0) {
+				for (let i = dailyQuotes.length - 1; i >= 0; i--) {
+					const { date, close } = dailyQuotes[i];
 
-				const { date: dividendDate } = dividends[dividendIndex];
+					if (date.getMonth() !== currMonth || i === dailyQuotes.length - 1) {
+						stockCntr += monthlyContribution / close;
+						contCntr += monthlyContribution;
+						stockPrices.push({
+							date,
+							value: stockCntr * close,
+							contribution: contCntr,
+							stockCnt: stockCntr,
+						});
 
-				if (date.getMonth() !== currMonth || i === dailyQuotes.length - 1) {
-					stockCntr += monthlyContribution / close;
-					contCntr += monthlyContribution;
-					stockPrices.push({
-						date,
-						value: stockCntr * close,
-						contribution: contCntr,
-						stockCnt: stockCntr,
-					});
-
-					currMonth = date.getMonth();
-				}
-
-				if (date.getTime() === dividendDate.getTime()) {
-					dictOfClosePricesOnDividendDates[date.getTime()] = close;
-					if (dividendIndex === 0) {
-						break;
-					} else {
-						dividendIndex--;
+						currMonth = date.getMonth();
 					}
 				}
+
+				stockPrices.forEach((_, index, arr) => {
+					arr[index].nextDate = arr[index + 1]?.date;
+				});
+
+				return { dictOfClosePricesOnDividendDates, stockPrices };
+			} else {
+				for (let i = dailyQuotes.length - 1; i >= 0; i--) {
+					const { date, close } = dailyQuotes[i];
+
+					const { date: dividendDate } = dividends[dividendIndex];
+
+					if (date.getMonth() !== currMonth || i === dailyQuotes.length - 1) {
+						stockCntr += monthlyContribution / close;
+						contCntr += monthlyContribution;
+						stockPrices.push({
+							date,
+							value: stockCntr * close,
+							contribution: contCntr,
+							stockCnt: stockCntr,
+						});
+
+						currMonth = date.getMonth();
+					}
+
+					if (date.getTime() === dividendDate.getTime()) {
+						dictOfClosePricesOnDividendDates[date.getTime()] = close;
+						if (dividendIndex === 0) {
+							break;
+						} else {
+							dividendIndex--;
+						}
+					}
+				}
+
+				stockPrices.forEach((_, index, arr) => {
+					arr[index].nextDate = arr[index + 1]?.date;
+				});
+
+				return { dictOfClosePricesOnDividendDates, stockPrices };
 			}
-
-			stockPrices.forEach((_, index, arr) => {
-				arr[index].nextDate = arr[index + 1]?.date;
-			});
-
-			return { dictOfClosePricesOnDividendDates, stockPrices };
 		};
 
 		const divCalc = (
