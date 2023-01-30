@@ -20,7 +20,8 @@
 		"express": "^4.18.2",
 		"get-all-tickers": "^1.0.0",
 		"python-shell": "^3.0.1",
-		"yahoo-finance": "^0.3.8"
+		"yahoo-finance": "^0.3.8",
+		"yahoo-finance2": "^2.3.10"
 	},
 	"devDependencies": {
 		"nodemon": "^2.0.20"
