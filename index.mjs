@@ -96,9 +96,9 @@ export const divCalc = (
 ) => {
 	const earningsFromDividendPerYear = {};
 	const dividendYieldPerYear = {};
-	let valueGraphIndex = 0;
-	for (let i = dividends.length - 1; i >= 0; i--) {
-		const { date: dividendDate, dividends: currDividends } = dividends[i];
+	let stockPriceIndex = 0;
+	for (let i = 0 ; i < dividends.length; i++) {
+		const { date: dividendDate, amount: currDividends } = dividends[i];
 		const year = dividendDate.getFullYear();
 
 		if (!earningsFromDividendPerYear[year]) {
@@ -114,7 +114,7 @@ export const divCalc = (
 				dictOfClosePricesOnDividendDates[dividendDate.getTime()]) *
 			100;
 
-		for (let i = valueGraphIndex; i < stockPrices.length; i++) {
+		for (let i = stockPriceIndex; i < stockPrices.length; i++) {
 			const { date, nextDate, stockCnt } = stockPrices[i];
 
 			if (
@@ -122,7 +122,7 @@ export const divCalc = (
 				(!nextDate && isDateInRange(dividendDate, date, new Date()))
 			) {
 				earningsFromDividendPerYear[year] += stockCnt * currDividends;
-				valueGraphIndex = i;
+				stockPriceIndex = i;
 				break;
 			}
 		}
