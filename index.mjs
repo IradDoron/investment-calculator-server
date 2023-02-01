@@ -3,8 +3,6 @@ import { config } from 'dotenv';
 import express from 'express';
 import yahooFinance from 'yahoo-finance2';
 
-import { divCalc, pricesDict } from './helpers/index.mjs';
-
 config();
 
 const app = express();
@@ -90,3 +88,117 @@ app.post('/calc', async (req, res) => {
 app.listen(PORT, HOST, () => {
 	console.log(`Server running on http://${HOST}:${PORT}`);
 });
+
+export const divCalc = (
+	dividends,
+	stockPrices,
+	dictOfClosePricesOnDividendDates
+) => {
+	const earningsFromDividendPerYear = {};
+	const dividendYieldPerYear = {};
+	let valueGraphIndex = 0;
+	for (let i = dividends.length - 1; i >= 0; i--) {
+		const { date: dividendDate, dividends: currDividends } = dividends[i];
+		const year = dividendDate.getFullYear();
+
+		if (!earningsFromDividendPerYear[year]) {
+			earningsFromDividendPerYear[year] = 0;
+		}
+
+		if (!dividendYieldPerYear[year]) {
+			dividendYieldPerYear[year] = 0;
+		}
+
+		dividendYieldPerYear[year] +=
+			(currDividends /
+				dictOfClosePricesOnDividendDates[dividendDate.getTime()]) *
+			100;
+
+		for (let i = valueGraphIndex; i < stockPrices.length; i++) {
+			const { date, nextDate, stockCnt } = stockPrices[i];
+
+			if (
+				isDateInRange(dividendDate, date, nextDate) ||
+				(!nextDate && isDateInRange(dividendDate, date, new Date()))
+			) {
+				earningsFromDividendPerYear[year] += stockCnt * currDividends;
+				valueGraphIndex = i;
+				break;
+			}
+		}
+	}
+
+	return { earningsFromDividendPerYear, dividendYieldPerYear };
+};
+
+export const isDateInRange = (date, start, end) => {
+	return date >= start && date <= end;
+};
+
+export const pricesDict = (quotes, dividends, monthlyContribution) => {
+	const dictOfClosePricesOnDividendDates = {};
+	let dividendIndex = 0;
+	let currMonth = quotes[0].date.getMonth();
+	let stockCntr = 0;
+	let contCntr = 0;
+	const stockPrices = [];
+
+	if (dividends.length === 0) {
+		quotes.forEach((element, index) => {
+			const { date, close } = element;
+
+			if (date.getMonth() !== currMonth || index === 0) {
+				stockCntr += monthlyContribution / close;
+				contCntr += monthlyContribution;
+				stockPrices.push({
+					date,
+					value: stockCntr * close,
+					contribution: contCntr,
+					stockCnt: stockCntr,
+				});
+
+				currMonth = date.getMonth();
+			}
+		});
+
+		stockPrices.forEach((_, index, arr) => {
+			arr[index].nextDate = arr[index + 1]?.date;
+		});
+
+		return { dictOfClosePricesOnDividendDates, stockPrices };
+	} else {
+		for (let i = 0; i < quotes.length; i++) {
+			const { date, close } = quotes[i];
+
+			const { date: dividendDate } = dividends[dividendIndex];
+
+			if (date.getMonth() !== currMonth || i === 0) {
+				stockCntr += monthlyContribution / close;
+				contCntr += monthlyContribution;
+				stockPrices.push({
+					date,
+					value: stockCntr * close,
+					contribution: contCntr,
+					stockCnt: stockCntr,
+				});
+
+				currMonth = date.getMonth();
+			}
+
+			if (date.getTime() === dividendDate.getTime()) {
+				dictOfClosePricesOnDividendDates[date.getTime()] = close;
+				if (dividendIndex === dividends.length - 1) {
+					break;
+				} else {
+					dividendIndex++;
+				}
+			}
+		}
+
+		stockPrices.forEach((_, index, arr) => {
+			arr[index].nextDate = arr[index + 1]?.date;
+		});
+
+		return { dictOfClosePricesOnDividendDates, stockPrices };
+	}
+};
