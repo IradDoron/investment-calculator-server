@@ -43,7 +43,11 @@ app.post('/calc', async (req, res) => {
 			return;
 		}
 
-		const { dividends } = quotesDayly.events;
+		let dividends = null;
+		if (quotesDayly.events?.dividends) {
+			dividends = quotesDayly.events?.dividends;
+		}
+
 		const { quotes } = quotesDayly;
 
 		const { dictOfClosePricesOnDividendDates, stockPrices } = pricesDict(
@@ -76,7 +80,9 @@ app.post('/calc', async (req, res) => {
 			stockPrices,
 			earningsFromDividendPerYear: earningsFromDividendPerYearArr,
 			dividendYieldPerYear: dividendYieldPerYearArr,
-			stockFullName: result.price.longName,
+			stockFullName: result.price.longName
+				? result.price.longName
+				: result.price.shortName,
 		};
 
 		res.send(responseObject);
@@ -96,34 +102,39 @@ export const divCalc = (
 ) => {
 	const earningsFromDividendPerYear = {};
 	const dividendYieldPerYear = {};
-	let stockPriceIndex = 0;
-	for (let i = 0 ; i < dividends.length; i++) {
-		const { date: dividendDate, amount: currDividends } = dividends[i];
-		const year = dividendDate.getFullYear();
 
-		if (!earningsFromDividendPerYear[year]) {
-			earningsFromDividendPerYear[year] = 0;
-		}
+	if (!dividends) {
+		return { earningsFromDividendPerYear, dividendYieldPerYear };
+	} else {
+		let stockPriceIndex = 0;
+		for (let i = 0; i < dividends.length; i++) {
+			const { date: dividendDate, amount: currDividends } = dividends[i];
+			const year = dividendDate.getFullYear();
 
-		if (!dividendYieldPerYear[year]) {
-			dividendYieldPerYear[year] = 0;
-		}
+			if (!earningsFromDividendPerYear[year]) {
+				earningsFromDividendPerYear[year] = 0;
+			}
 
-		dividendYieldPerYear[year] +=
-			(currDividends /
-				dictOfClosePricesOnDividendDates[dividendDate.getTime()]) *
-			100;
+			if (!dividendYieldPerYear[year]) {
+				dividendYieldPerYear[year] = 0;
+			}
 
-		for (let i = stockPriceIndex; i < stockPrices.length; i++) {
-			const { date, nextDate, stockCnt } = stockPrices[i];
+			dividendYieldPerYear[year] +=
+				(currDividends /
+					dictOfClosePricesOnDividendDates[dividendDate.getTime()]) *
+				100;
 
-			if (
-				isDateInRange(dividendDate, date, nextDate) ||
-				(!nextDate && isDateInRange(dividendDate, date, new Date()))
-			) {
-				earningsFromDividendPerYear[year] += stockCnt * currDividends;
-				stockPriceIndex = i;
-				break;
+			for (let i = stockPriceIndex; i < stockPrices.length; i++) {
+				const { date, nextDate, stockCnt } = stockPrices[i];
+
+				if (
+					isDateInRange(dividendDate, date, nextDate) ||
+					(!nextDate && isDateInRange(dividendDate, date, new Date()))
+				) {
+					earningsFromDividendPerYear[year] += stockCnt * currDividends;
+					stockPriceIndex = i;
+					break;
+				}
 			}
 		}
 	}
@@ -143,7 +154,7 @@ export const pricesDict = (quotes, dividends, monthlyContribution) => {
 	let contCntr = 0;
 	const stockPrices = [];
 
-	if (dividends.length === 0) {
+	if (!dividends) {
 		quotes.forEach((element, index) => {
 			const { date, close } = element;
 
