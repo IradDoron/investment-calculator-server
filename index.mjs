@@ -53,7 +53,8 @@ app.post('/calc', async (req, res) => {
 		const { dictOfClosePricesOnDividendDates, stockPrices } = pricesDict(
 			quotes,
 			dividends,
-			monthlyContribution
+			monthlyContribution,
+			startInvest
 		);
 
 		const { earningsFromDividendPerYear, dividendYieldPerYear } = divCalc(
@@ -146,19 +147,27 @@ export const isDateInRange = (date, start, end) => {
 	return date >= start && date <= end;
 };
 
-export const pricesDict = (quotes, dividends, monthlyContribution) => {
+export const pricesDict = (quotes, dividends, monthlyContribution, startInvest) => {
 	const dictOfClosePricesOnDividendDates = {};
 	let dividendIndex = 0;
 	let currMonth = quotes[0].date.getMonth();
-	let stockCntr = 0;
-	let contCntr = 0;
+	let stockCntr = startInvest / quotes[0].close;
+	let contCntr = startInvest;
 	const stockPrices = [];
 
 	if (!dividends) {
 		quotes.forEach((element, index) => {
 			const { date, close } = element;
+			if (index === 0) {
+				stockPrices.push({
+					date,
+					value: stockCntr * close,
+					contribution: contCntr,
+					stockCnt: stockCntr,
+				});
+			}
 
-			if (date.getMonth() !== currMonth || index === 0) {
+			else if (date.getMonth() !== currMonth) {
 				stockCntr += monthlyContribution / close;
 				contCntr += monthlyContribution;
 				stockPrices.push({
