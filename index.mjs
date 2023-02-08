@@ -100,6 +100,7 @@ app.post('/calc', async (req, res) => {
 			dividendYieldPerYear: dividendYieldPerYearList,
 		};
 
+		console.log(stockPricesList[0])
 		res.send(responseObject);
 
 		
@@ -181,7 +182,7 @@ export const pricesDict = (
 			const { date, close } = element;
 			if (index === 0) {
 				stockPrices.push({
-					date,
+					date: date.getTime,
 					value: stockCntr * close,
 					contribution: contCntr,
 					stockCnt: stockCntr,
@@ -190,7 +191,7 @@ export const pricesDict = (
 				stockCntr += monthlyContribution / close;
 				contCntr += monthlyContribution;
 				stockPrices.push({
-					date,
+					date: date.getTime(),
 					value: stockCntr * close,
 					contribution: contCntr,
 					stockCnt: stockCntr,
@@ -215,7 +216,7 @@ export const pricesDict = (
 				stockCntr += monthlyContribution / close;
 				contCntr += monthlyContribution;
 				stockPrices.push({
-					date,
+					date: date.getTime(),
 					value: stockCntr * close,
 					contribution: contCntr,
 					stockCnt: stockCntr,
