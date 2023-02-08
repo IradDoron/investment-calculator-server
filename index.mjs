@@ -20,9 +20,9 @@ app.get('/', (req, res) => {
 
 app.post('/calc', async (req, res) => {
 	try {
-		const { yearsAgo, ticket, startInvest, monthlyContribution } = req.body;
+		const { yearsAgo, startInvest, monthlyContribution, ticketsAndIndexes } =
+			req.body;
 		const queryOptions = { modules: ['price'] }; // defaults
-		const result = await yahooFinance.quoteSummary(ticket, queryOptions);
 		const currentDate = new Date();
 		const dateYearsAgo = new Date(currentDate);
 		dateYearsAgo.setDate(currentDate.getDate() - yearsAgo * 365.25);
@@ -33,60 +33,76 @@ app.post('/calc', async (req, res) => {
 			interval: '1d',
 		};
 
-		const quotesDayly = await yahooFinance._chart(
-			ticket,
+		let quotesDaylyList = quotesDaylyListFunc(
+			ticketsAndIndexes,
 			historicalOptionsDayly
 		);
 
-		if (quotesDayly.length === 0) {
-			res.send({ error: 'No data for this ticker' });
-			return;
-		}
+		quotesDaylyList = await quotesDaylyList
 
-		let dividends = null;
-		if (quotesDayly.events?.dividends) {
-			dividends = quotesDayly.events?.dividends;
-		}
+		const dividends = [];
+		const dictOfClosePricesOnDividendDatesList = []
+		const stockPricesList = []
+		const earningsFromDividendPerYearList = []
+		const dividendYieldPerYearList = []
+		quotesDaylyList.forEach((element, index) => {
+			if (element.length === 0) {
+				res.send({ error: `No data for ticker ${ticketsAndIndexes[index].ticket}`});
+				return;
+			}
+			dividends.push(null);
+			if (element.events?.dividends) {
+				dividends[index] = element.events.dividends;
+			}
 
-		const { quotes } = quotesDayly;
+			const { quotes } = element;
 
-		const { dictOfClosePricesOnDividendDates, stockPrices } = pricesDict(
-			quotes,
-			dividends,
-			monthlyContribution,
-			startInvest
-		);
+			const { dictOfClosePricesOnDividendDates, stockPrices } = pricesDict(
+				quotes,
+				dividends[index],
+				monthlyContribution,
+				startInvest
+			);
 
-		const { earningsFromDividendPerYear, dividendYieldPerYear } = divCalc(
-			dividends,
-			stockPrices,
-			dictOfClosePricesOnDividendDates
-		);
+			dictOfClosePricesOnDividendDatesList.push(dictOfClosePricesOnDividendDates)
+			stockPricesList.push(stockPrices)
 
-		const earningsFromDividendPerYearArr = Object.entries(
-			earningsFromDividendPerYear
-		).map(([year, value]) => ({
-			year,
-			value,
-		}));
+			const { earningsFromDividendPerYear, dividendYieldPerYear } = divCalc(
+				dividends[index],
+				stockPrices,
+				dictOfClosePricesOnDividendDates
+			);
 
-		const dividendYieldPerYearArr = Object.entries(dividendYieldPerYear).map(
-			([year, value]) => ({
+			
+			const earningsFromDividendPerYearArr = Object.entries(
+				earningsFromDividendPerYear
+			).map(([year, value]) => ({
 				year,
 				value,
-			})
-		);
+			}));
 
+			const dividendYieldPerYearArr = Object.entries(dividendYieldPerYear).map(
+				([year, value]) => ({
+					year,
+					value,
+				})
+			);
+
+			earningsFromDividendPerYearList.push(earningsFromDividendPerYearArr)
+
+			dividendYieldPerYearList.push(dividendYieldPerYearArr)
+
+			})
+	
 		const responseObject = {
-			stockPrices,
-			earningsFromDividendPerYear: earningsFromDividendPerYearArr,
-			dividendYieldPerYear: dividendYieldPerYearArr,
-			stockFullName: result.price.longName
-				? result.price.longName
-				: result.price.shortName,
+			stockPricesList,
+			earningsFromDividendPerYear: earningsFromDividendPerYearList,
+			dividendYieldPerYear: dividendYieldPerYearList,
 		};
 
 		res.send(responseObject);
+
+		
 	} catch (err) {
 		console.log(err);
 	}
@@ -147,7 +163,12 @@ export const isDateInRange = (date, start, end) => {
 	return date >= start && date <= end;
 };
 
-export const pricesDict = (quotes, dividends, monthlyContribution, startInvest) => {
+export const pricesDict = (
+	quotes,
+	dividends,
+	monthlyContribution,
+	startInvest
+) => {
 	const dictOfClosePricesOnDividendDates = {};
 	let dividendIndex = 0;
 	let currMonth = quotes[0].date.getMonth();
@@ -165,9 +186,7 @@ export const pricesDict = (quotes, dividends, monthlyContribution, startInvest) 
 					contribution: contCntr,
 					stockCnt: stockCntr,
 				});
-			}
-
-			else if (date.getMonth() !== currMonth) {
+			} else if (date.getMonth() !== currMonth) {
 				stockCntr += monthlyContribution / close;
 				contCntr += monthlyContribution;
 				stockPrices.push({
@@ -221,4 +240,16 @@ export const pricesDict = (quotes, dividends, monthlyContribution, startInvest) 
 
 		return { dictOfClosePricesOnDividendDates, stockPrices };
 	}
+};
+
+export const quotesDaylyListFunc = async (
+	ticketsAndIndexes,
+	historicalOptionsDayly
+) => {
+	return await Promise.all(
+		ticketsAndIndexes.map(async (element) => {
+			const { ticket } = element;
+			return await yahooFinance._chart(ticket, historicalOptionsDayly);
+		})
+	);
 };
